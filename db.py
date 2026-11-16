@@ -120,6 +120,11 @@ def get_stage(stage_id):
     return rows[0]
 
 
+def add_artist(name, genre, fee, duration):
+    """Add one artist to the catalogue and return its id."""
+    return write("INSERT INTO artists (name, genre, fee, duration) VALUES (?, ?, ?, ?)", (name, genre, fee, duration))
+
+
 def get_bookings():
     """Return every saved booking, with the artist's and the stage's details, by stage and start time.
 
