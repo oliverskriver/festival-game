@@ -58,6 +58,11 @@ def create_tables(connection):
             stage_id INTEGER NOT NULL REFERENCES stages(id),
             start INTEGER NOT NULL
         );
+        CREATE TABLE IF NOT EXISTS plan (
+            id INTEGER PRIMARY KEY CHECK (id = 1),
+            status TEXT NOT NULL
+        );
+        INSERT OR IGNORE INTO plan (id, status) VALUES (1, 'draft');
         """
     )
     if connection.execute("SELECT COUNT(*) FROM stages").fetchone()[0] == 0:
@@ -165,3 +170,32 @@ def update_booking(booking_id, stage_id, start):
 def delete_booking(booking_id):
     """Delete one saved booking."""
     write("DELETE FROM bookings WHERE id = ?", (booking_id,))
+
+
+def get_plan_status():
+    """Return "draft" or "final". There is exactly one plan, so the plan table has exactly one row."""
+    return read("SELECT status FROM plan WHERE id = 1")[0]["status"]
+
+
+def set_plan_status(status):
+    """Save whether the plan is "draft" or "final"."""
+    write("UPDATE plan SET status = ? WHERE id = 1", (status,))
+
+
+def reset_plan():
+    """Start over: delete every booking and make the plan a draft. The catalogue and stages stay."""
+    write("DELETE FROM bookings")
+    set_plan_status("draft")
+
+
+if __name__ == "__main__":
+    # uv run python db.py --reset
+    import sys
+
+    if "--reset" in sys.argv:
+        reset_plan()
+        print("The plan is empty again. Stages and artists are unchanged.")
+    else:
+        print("Database: " + DB_PATH)
+        print(str(len(get_bookings())) + " bookings saved, plan is " + get_plan_status() + ".")
+        print("Run with --reset to delete all bookings.")

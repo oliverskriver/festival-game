@@ -15,6 +15,12 @@ FESTIVAL_START = 14 * 60  # 14:00
 FESTIVAL_END = 23 * 60  # 23:00
 BUDGET = 10000  # euros
 
+# A plan can only be finalised with at least this many booked artists.
+MIN_ARTISTS_TO_FINALISE = 4
+
+# What every change is told while the plan is final.
+PLAN_IS_FINAL = "The plan is final and read-only. Reopen it as a draft before changing the programme."
+
 
 def to_minutes(clock):
     """Turn a clock time like "16:00" into minutes after midnight (960)."""
@@ -136,8 +142,20 @@ def find_problem(artist_id, stage_id, start, ignore_booking_id=None):
     return ACCEPTED
 
 
+def plan_status():
+    """Return "draft" or "final"."""
+    return db.get_plan_status()
+
+
+def is_final():
+    """True while the plan is final (read-only)."""
+    return plan_status() == "final"
+
+
 def add_booking(artist_id, stage_id, start):
     """Book an artist on a stage at a start time. Saves it only if every rule passes."""
+    if is_final():
+        return PLAN_IS_FINAL
     problem = find_problem(artist_id, stage_id, start)
     if problem != ACCEPTED:
         return problem
@@ -147,6 +165,8 @@ def add_booking(artist_id, stage_id, start):
 
 def move_booking(booking_id, stage_id, start):
     """Move a saved booking to another stage and/or start time. A refused move keeps the original."""
+    if is_final():
+        return PLAN_IS_FINAL
     booking = db.get_booking(booking_id)
     if booking is None:
         return "That booking no longer exists."
@@ -159,7 +179,48 @@ def move_booking(booking_id, stage_id, start):
 
 def remove_booking(booking_id):
     """Remove a saved booking. Its slot is free again and its fee no longer counts."""
+    if is_final():
+        return PLAN_IS_FINAL
     if db.get_booking(booking_id) is None:
         return "That booking no longer exists."
     db.delete_booking(booking_id)
+    return ACCEPTED
+
+
+def plan_problems():
+    """Re-check every saved booking against all the rules. Return a list of problems (empty = all rules pass).
+
+    Each booking is judged as if it were being moved to the slot it already has, so the same
+    find_problem that guards new bookings also audits the whole plan.
+    """
+    problems = []
+    for booking in db.get_bookings():
+        problem = find_problem(booking["artist_id"], booking["stage_id"], booking["start"], ignore_booking_id=booking["id"])
+        if problem != ACCEPTED:
+            problems.append(problem)
+    return problems
+
+
+def finalise_plan():
+    """Mark the plan as final. Needs at least four booked artists and every rule passing."""
+    if is_final():
+        return "The plan is already final."
+    booked = len(db.get_bookings())
+    if booked < MIN_ARTISTS_TO_FINALISE:
+        return (
+            "Only " + str(booked) + " of the " + str(MIN_ARTISTS_TO_FINALISE)
+            + " artists needed are booked. Book at least " + str(MIN_ARTISTS_TO_FINALISE) + " before finalising."
+        )
+    problems = plan_problems()
+    if len(problems) > 0:
+        return "The plan cannot be finalised yet: " + problems[0]
+    db.set_plan_status("final")
+    return ACCEPTED
+
+
+def reopen_plan():
+    """Turn a final plan back into a draft so it can be changed again. Every booking is kept."""
+    if not is_final():
+        return "The plan is already a draft."
+    db.set_plan_status("draft")
     return ACCEPTED

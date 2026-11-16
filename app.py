@@ -126,6 +126,18 @@ def show_change_form():
             )
 
 
+def show_status():
+    """FA05: whether the plan is a draft or final, with the button that switches it."""
+    if logic.is_final():
+        st.info("This plan is FINAL and read-only.")
+        if st.button("Reopen as draft"):
+            finish_action(logic.reopen_plan(), "The plan is a draft again. You can change the programme.")
+    else:
+        st.caption("This plan is a DRAFT. Finalise it when at least 4 artists are booked.")
+        if st.button("Finalise plan"):
+            finish_action(logic.finalise_plan(), "The plan is final. It is read-only until you reopen it.")
+
+
 def show_budget():
     """FA03: total artist fees and remaining budget, read from the saved bookings."""
     booked, left, count = st.columns(3)
@@ -157,8 +169,12 @@ def main():
     show_timetable()
     left, right = st.columns(2)
     with left:
-        show_booking_form()
-        show_change_form()
+        if logic.is_final():
+            st.caption("Booking and changing are locked while the plan is final.")
+        else:
+            show_booking_form()
+            show_change_form()
+        show_status()
     with right:
         show_catalogue()
 
