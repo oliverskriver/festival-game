@@ -147,3 +147,21 @@ def get_bookings():
 def add_booking(artist_id, stage_id, start):
     """Save a new booking and return its id. The rules are checked in logic.py, not here."""
     return write("INSERT INTO bookings (artist_id, stage_id, start) VALUES (?, ?, ?)", (artist_id, stage_id, start))
+
+
+def get_booking(booking_id):
+    """Return one saved booking (with artist and stage details), or None if it does not exist."""
+    for booking in get_bookings():
+        if booking["id"] == booking_id:
+            return booking
+    return None
+
+
+def update_booking(booking_id, stage_id, start):
+    """Change the stage and start time of a saved booking. The artist stays the same."""
+    write("UPDATE bookings SET stage_id = ?, start = ? WHERE id = ?", (stage_id, start, booking_id))
+
+
+def delete_booking(booking_id):
+    """Delete one saved booking."""
+    write("DELETE FROM bookings WHERE id = ?", (booking_id,))
