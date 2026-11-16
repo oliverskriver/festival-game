@@ -10,11 +10,6 @@ import logic
 st.set_page_config(page_title="Musik i Lejet planner", page_icon="🎪", layout="wide")
 
 
-def euros(amount):
-    """Format whole euros for the screen: 2400 -> "€2,400"."""
-    return "€" + format(amount, ",")
-
-
 def show_message():
     """Show the result of the last action (kept across the redraw that follows it)."""
     if "message" in st.session_state:
@@ -38,11 +33,12 @@ def show_catalogue():
     """FA01: the artist catalogue with genre, fee and set length."""
     st.subheader("Artists")
     rows = []
-    for artist in db.get_artists():
+    for artist in logic.catalogue():
         rows.append({
+            "Status": "Booked" if artist["booked"] else "Available",
             "Artist": artist["name"],
             "Genre": artist["genre"],
-            "Fee": euros(artist["fee"]),
+            "Fee": logic.euros(artist["fee"]),
             "Set length": str(artist["duration"]) + " min",
         })
     st.table(rows)
@@ -61,7 +57,7 @@ def show_booking_form():
         artist_id = st.selectbox(
             "Artist",
             list(artists.keys()),
-            format_func=lambda i: artists[i]["name"] + " · " + euros(artists[i]["fee"]) + " · " + str(artists[i]["duration"]) + " min",
+            format_func=lambda i: artists[i]["name"] + " · " + logic.euros(artists[i]["fee"]) + " · " + str(artists[i]["duration"]) + " min",
             key="book_artist",
         )
         stage_id = st.selectbox("Stage", list(stages.keys()), format_func=lambda i: stages[i]["name"], key="book_stage")
@@ -75,6 +71,14 @@ def show_booking_form():
                 artists[artist_id]["name"] + " is booked on " + stages[stage_id]["name"]
                 + ", " + logic.to_clock(start) + "–" + logic.to_clock(end) + ".",
             )
+
+
+def show_budget():
+    """FA03: total artist fees and remaining budget, read from the saved bookings."""
+    booked, left, count = st.columns(3)
+    booked.metric("Fees booked", logic.euros(logic.total_fees()))
+    left.metric("Budget left", logic.euros(logic.remaining_budget()))
+    count.metric("Artists booked", len(db.get_bookings()))
 
 
 def show_timetable():
@@ -96,6 +100,7 @@ def main():
     """Draw the whole page, top to bottom."""
     st.title("Musik i Lejet · festival planner")
     show_message()
+    show_budget()
     show_timetable()
     left, right = st.columns(2)
     with left:
