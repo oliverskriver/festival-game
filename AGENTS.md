@@ -15,6 +15,7 @@ app.py     the Streamlit screens (entry point). No rules in here.
 logic.py   the rules: may this booking be accepted? budget, overlaps, finalising.
 db.py      storage: reads and writes the SQLite database file data/festival.db.
 tests/     pytest checks. One file per feature, plus the brief's scenarios A1-A6.
+style.css  colours and fonts only.
 specs/     one spec per task: Why, What, Out of scope, Done when.
 docs/      a copy of the business requirements (BRD).
 ```
