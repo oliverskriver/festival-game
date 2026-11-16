@@ -1,0 +1,144 @@
+"""Storage for the festival planner. Everything is saved in one SQLite file: data/festival.db.
+
+Nothing is kept in memory between two calls: every function opens the file, does one thing and
+closes it again. That is why the plan is still there after the app is stopped and started again.
+"""
+
+import os
+import sqlite3
+
+# The database file. Tests point this at a throwaway file instead.
+DB_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data", "festival.db")
+
+# Fixed content: the stages (name, description). Solscenen and Skovscenen are the two stages the
+# brief asks for; Klub3210 is this project's extension.
+STAGES = [
+    ("Solscenen", "The main stage, out in the open"),
+    ("Skovscenen", "The smaller stage among the trees"),
+    ("Klub3210", "An intimate oasis for new Danish music and jazz, named after Vejby's postcode"),
+]
+
+# Fixed content: the artist catalogue (name, genre, fee in whole euros, set length in minutes).
+# All artists are invented.
+ARTISTS = [
+    ("Sommerfugl", "Pop", 3200, 90),
+    ("Solsort & Stær", "Hip hop", 2600, 60),
+    ("Havgus", "Indie pop", 2400, 75),
+    ("Tangsø", "Rock", 2000, 60),
+    ("Nordlys Kollektivet", "Electronic", 1800, 60),
+    ("Brændingen", "Surf rock", 1600, 60),
+    ("Blå Time", "Soul", 1500, 60),
+    ("Fyrtårnet", "Disco DJ set", 1400, 90),
+    ("Vejby Brass Band", "Brass funk", 1200, 50),
+    ("Klitrosen", "Folk", 1000, 45),
+    ("Lyngbakken Jazz Trio", "Jazz", 900, 60),
+    ("Marehalm", "New Danish songwriter", 800, 45),
+]
+
+
+def create_tables(connection):
+    """Create the tables if they are missing, and load the fixed content into a brand-new database."""
+    connection.executescript(
+        """
+        CREATE TABLE IF NOT EXISTS stages (
+            id INTEGER PRIMARY KEY,
+            name TEXT NOT NULL,
+            description TEXT NOT NULL
+        );
+        CREATE TABLE IF NOT EXISTS artists (
+            id INTEGER PRIMARY KEY,
+            name TEXT NOT NULL,
+            genre TEXT NOT NULL,
+            fee INTEGER NOT NULL,
+            duration INTEGER NOT NULL
+        );
+        CREATE TABLE IF NOT EXISTS bookings (
+            id INTEGER PRIMARY KEY,
+            artist_id INTEGER NOT NULL UNIQUE REFERENCES artists(id),
+            stage_id INTEGER NOT NULL REFERENCES stages(id),
+            start INTEGER NOT NULL
+        );
+        """
+    )
+    if connection.execute("SELECT COUNT(*) FROM stages").fetchone()[0] == 0:
+        connection.executemany("INSERT INTO stages (name, description) VALUES (?, ?)", STAGES)
+        connection.executemany("INSERT INTO artists (name, genre, fee, duration) VALUES (?, ?, ?, ?)", ARTISTS)
+    connection.commit()
+
+
+def connect():
+    """Open the database file. The first time, the file, its tables and the fixed content are created."""
+    os.makedirs(os.path.dirname(DB_PATH), exist_ok=True)
+    connection = sqlite3.connect(DB_PATH)
+    connection.row_factory = sqlite3.Row
+    create_tables(connection)
+    return connection
+
+
+def read(sql, values=()):
+    """Run a SELECT and return the rows as a list of dicts."""
+    connection = connect()
+    rows = []
+    for row in connection.execute(sql, values).fetchall():
+        rows.append(dict(row))
+    connection.close()
+    return rows
+
+
+def write(sql, values=()):
+    """Run an INSERT, UPDATE or DELETE, save it to the file, and return the id of a newly inserted row."""
+    connection = connect()
+    cursor = connection.execute(sql, values)
+    connection.commit()
+    connection.close()
+    return cursor.lastrowid
+
+
+def get_stages():
+    """Return every stage, in festival order."""
+    return read("SELECT id, name, description FROM stages ORDER BY id")
+
+
+def get_artists():
+    """Return the whole artist catalogue."""
+    return read("SELECT id, name, genre, fee, duration FROM artists ORDER BY id")
+
+
+def get_artist(artist_id):
+    """Return one artist, or None if there is no artist with this id."""
+    rows = read("SELECT id, name, genre, fee, duration FROM artists WHERE id = ?", (artist_id,))
+    if len(rows) == 0:
+        return None
+    return rows[0]
+
+
+def get_stage(stage_id):
+    """Return one stage, or None if there is no stage with this id."""
+    rows = read("SELECT id, name, description FROM stages WHERE id = ?", (stage_id,))
+    if len(rows) == 0:
+        return None
+    return rows[0]
+
+
+def get_bookings():
+    """Return every saved booking, with the artist's and the stage's details, by stage and start time.
+
+    Only artist, stage and start time are stored. Name, fee and set length are looked up in the
+    catalogue, so a booking can never disagree with it.
+    """
+    return read(
+        """
+        SELECT bookings.id, bookings.artist_id, bookings.stage_id, bookings.start,
+               artists.name AS artist_name, artists.genre, artists.fee, artists.duration,
+               stages.name AS stage_name
+        FROM bookings
+        JOIN artists ON artists.id = bookings.artist_id
+        JOIN stages ON stages.id = bookings.stage_id
+        ORDER BY bookings.stage_id, bookings.start
+        """
+    )
+
+
+def add_booking(artist_id, stage_id, start):
+    """Save a new booking and return its id. The rules are checked in logic.py, not here."""
+    return write("INSERT INTO bookings (artist_id, stage_id, start) VALUES (?, ?, ?)", (artist_id, stage_id, start))
