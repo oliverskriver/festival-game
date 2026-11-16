@@ -73,6 +73,59 @@ def show_booking_form():
             )
 
 
+def show_change_form():
+    """FA04: move a booking to another stage or time, or remove it."""
+    st.subheader("Change a booking")
+    bookings = {}
+    for booking in db.get_bookings():
+        bookings[booking["id"]] = booking
+    if len(bookings) == 0:
+        st.caption("Nothing booked yet.")
+        return
+    stages = {}
+    for stage in db.get_stages():
+        stages[stage["id"]] = stage
+    booking_id = st.selectbox(
+        "Booking",
+        list(bookings.keys()),
+        format_func=lambda i: bookings[i]["artist_name"] + " · " + bookings[i]["stage_name"] + " · "
+        + logic.to_clock(bookings[i]["start"]) + "–" + logic.to_clock(logic.end_of(bookings[i])),
+        key="change_booking",
+    )
+    booking = bookings[booking_id]
+    # The keys contain the booking id, so the boxes start at this booking's own stage and time.
+    with st.form("change"):
+        stage_ids = list(stages.keys())
+        stage_id = st.selectbox(
+            "New stage",
+            stage_ids,
+            index=stage_ids.index(booking["stage_id"]),
+            format_func=lambda i: stages[i]["name"],
+            key="change_stage_" + str(booking_id),
+        )
+        start_time = st.time_input(
+            "New start time",
+            value=datetime.time(booking["start"] // 60, booking["start"] % 60),
+            step=300,
+            key="change_start_" + str(booking_id),
+        )
+        move_column, remove_column = st.columns(2)
+        if move_column.form_submit_button("Move booking"):
+            start = start_time.hour * 60 + start_time.minute
+            problem = logic.move_booking(booking_id, stage_id, start)
+            finish_action(
+                problem,
+                booking["artist_name"] + " now plays " + stages[stage_id]["name"] + ", "
+                + logic.to_clock(start) + "–" + logic.to_clock(start + booking["duration"]) + ".",
+            )
+        if remove_column.form_submit_button("Remove booking"):
+            problem = logic.remove_booking(booking_id)
+            finish_action(
+                problem,
+                booking["artist_name"] + " is removed. " + logic.euros(booking["fee"]) + " is back in the budget.",
+            )
+
+
 def show_budget():
     """FA03: total artist fees and remaining budget, read from the saved bookings."""
     booked, left, count = st.columns(3)
@@ -105,6 +158,7 @@ def main():
     left, right = st.columns(2)
     with left:
         show_booking_form()
+        show_change_form()
     with right:
         show_catalogue()
 

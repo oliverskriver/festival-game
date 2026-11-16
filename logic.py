@@ -75,16 +75,25 @@ def catalogue():
     return artists
 
 
-def find_problem(artist_id, stage_id, start):
-    """Check a wished booking against the rules. Return "" if it is allowed, else the reason."""
+def find_problem(artist_id, stage_id, start, ignore_booking_id=None):
+    """Check a wished booking against the rules. Return "" if it is allowed, else the reason.
+
+    When an existing booking is being moved, pass its id as ignore_booking_id: the wish is then
+    judged as a replacement of that booking, so it cannot clash with itself or pay its fee twice.
+    """
     artist = db.get_artist(artist_id)
     stage = db.get_stage(stage_id)
     end = start + artist["duration"]
     wish = artist["name"] + " " + to_clock(start) + "–" + to_clock(end)
-    bookings = db.get_bookings()
+
+    # Every saved booking except the one being replaced.
+    others = []
+    for booking in db.get_bookings():
+        if booking["id"] != ignore_booking_id:
+            others.append(booking)
 
     # Rule R1: an artist plays at most once in the festival.
-    for booking in bookings:
+    for booking in others:
         if booking["artist_id"] == artist_id:
             return (
                 artist["name"] + " is already in the programme (" + booking["stage_name"] + ", "
@@ -104,9 +113,9 @@ def find_problem(artist_id, stage_id, start):
             + ", after the festival closes at " + to_clock(FESTIVAL_END) + "."
         )
 
-    # Rule R2: no two sets at the same time on the same stage.
-    for booking in stage_lineup(stage_id):
-        if overlaps(start, end, booking["start"], end_of(booking)):
+    # Rule R2: no two sets at the same time on the same stage. (Rule R3: other stages do not matter.)
+    for booking in others:
+        if booking["stage_id"] == stage_id and overlaps(start, end, booking["start"], end_of(booking)):
             return (
                 stage["name"] + " is taken: " + booking["artist_name"] + " plays "
                 + to_clock(booking["start"]) + "–" + to_clock(end_of(booking))
@@ -114,12 +123,15 @@ def find_problem(artist_id, stage_id, start):
             )
 
     # Rule R4: the fees may not go over the budget. Landing exactly on it is allowed.
-    total = total_fees() + artist["fee"]
+    fees_of_others = 0
+    for booking in others:
+        fees_of_others += booking["fee"]
+    total = fees_of_others + artist["fee"]
     if total > BUDGET:
         return (
             artist["name"] + " costs " + euros(artist["fee"]) + ", which would bring the fees to "
             + euros(total) + ". That is over the " + euros(BUDGET) + " budget; "
-            + euros(remaining_budget()) + " is left."
+            + euros(BUDGET - fees_of_others) + " is left."
         )
     return ACCEPTED
 
@@ -130,4 +142,24 @@ def add_booking(artist_id, stage_id, start):
     if problem != ACCEPTED:
         return problem
     db.add_booking(artist_id, stage_id, start)
+    return ACCEPTED
+
+
+def move_booking(booking_id, stage_id, start):
+    """Move a saved booking to another stage and/or start time. A refused move keeps the original."""
+    booking = db.get_booking(booking_id)
+    if booking is None:
+        return "That booking no longer exists."
+    problem = find_problem(booking["artist_id"], stage_id, start, ignore_booking_id=booking_id)
+    if problem != ACCEPTED:
+        return problem
+    db.update_booking(booking_id, stage_id, start)
+    return ACCEPTED
+
+
+def remove_booking(booking_id):
+    """Remove a saved booking. Its slot is free again and its fee no longer counts."""
+    if db.get_booking(booking_id) is None:
+        return "That booking no longer exists."
+    db.delete_booking(booking_id)
     return ACCEPTED
