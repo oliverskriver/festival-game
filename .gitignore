@@ -1,0 +1,9 @@
+__pycache__/
+.venv/
+.DS_Store
+.pytest_cache/
+# local data and secrets stay out of git
+data/
+*.db
+.streamlit/secrets.toml
+.env
