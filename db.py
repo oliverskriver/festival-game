@@ -1,9 +1,11 @@
-"""Storage for the festival planner. Everything is saved in one SQLite file: data/festival.db.
+"""Storage for the festival planner and the game. Everything is saved in one SQLite file: data/festival.db.
 
 Nothing is kept in memory between two calls: every function opens the file, does one thing and
 closes it again. That is why the plan is still there after the app is stopped and started again.
 """
 
+import datetime
+import json
 import os
 import sqlite3
 
@@ -63,6 +65,23 @@ def create_tables(connection):
             status TEXT NOT NULL
         );
         INSERT OR IGNORE INTO plan (id, status) VALUES (1, 'draft');
+        CREATE TABLE IF NOT EXISTS runs (
+            id INTEGER PRIMARY KEY,
+            player TEXT NOT NULL,
+            day TEXT NOT NULL,
+            mission TEXT NOT NULL,
+            points INTEGER NOT NULL,
+            stars INTEGER NOT NULL,
+            title TEXT NOT NULL,
+            completed INTEGER NOT NULL,
+            summary TEXT NOT NULL,
+            played_at TEXT NOT NULL
+        );
+        CREATE TABLE IF NOT EXISTS player (
+            id INTEGER PRIMARY KEY CHECK (id = 1),
+            name TEXT NOT NULL,
+            look TEXT NOT NULL
+        );
         """
     )
     if connection.execute("SELECT COUNT(*) FROM stages").fetchone()[0] == 0:
@@ -186,6 +205,50 @@ def reset_plan():
     """Start over: delete every booking and make the plan a draft. The catalogue and stages stay."""
     write("DELETE FROM bookings")
     set_plan_status("draft")
+
+
+# ---------- the game: finished nights (high scores) and the player's outfit ----------
+
+
+def save_run(run):
+    """Save one finished night. The summary (a dictionary) is stored as JSON text."""
+    return write(
+        "INSERT INTO runs (player, day, mission, points, stars, title, completed, summary, played_at)"
+        " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+        (
+            run["player"],
+            run["day"],
+            run["mission"],
+            run["points"],
+            run["stars"],
+            run["title"],
+            1 if run["completed"] else 0,
+            json.dumps(run["summary"]),
+            datetime.datetime.now().strftime("%Y-%m-%d %H:%M"),
+        ),
+    )
+
+
+def get_runs(limit=20):
+    """The saved nights, best score first (the newest first when two scores are equal)."""
+    runs = read("SELECT * FROM runs ORDER BY points DESC, id DESC LIMIT ?", (limit,))
+    for run in runs:
+        run["summary"] = json.loads(run["summary"])
+        run["completed"] = run["completed"] == 1
+    return runs
+
+
+def save_player(name, look):
+    """Remember the player's name and outfit. There is one player, so the table has one row."""
+    write("INSERT OR REPLACE INTO player (id, name, look) VALUES (1, ?, ?)", (name, json.dumps(look)))
+
+
+def get_player():
+    """The remembered player as {"name": ..., "look": {...}}, or None before the first game."""
+    rows = read("SELECT name, look FROM player WHERE id = 1")
+    if len(rows) == 0:
+        return None
+    return {"name": rows[0]["name"], "look": json.loads(rows[0]["look"])}
 
 
 if __name__ == "__main__":
