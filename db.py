@@ -15,7 +15,7 @@ DB_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data", "fest
 STAGES = [
     ("Solscenen", "The main stage, out in the open"),
     ("Skovscenen", "The smaller stage among the trees"),
-    ("Klub3210", "An intimate oasis for new Danish music and jazz, named after Vejby's postcode"),
+    ("Klub3210", "Intimate oasis for new Danish music and jazz"),
 ]
 
 # Fixed content: the artist catalogue (name, genre, fee in whole euros, set length in minutes).

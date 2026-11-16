@@ -1,0 +1,18 @@
+# The look of the app: flat colours and square corners, inspired by musikilejet.dk.
+
+[theme]
+base = "light"
+primaryColor = "#3374F2"
+backgroundColor = "#FDF5C6"
+secondaryBackgroundColor = "#FFFFFF"
+textColor = "#000000"
+borderColor = "#000000"
+baseRadius = "none"
+showWidgetBorder = true
+
+[browser]
+gatherUsageStats = false
+
+[client]
+# Hide Streamlit's own "Deploy" button so it does not sit on top of the page.
+toolbarMode = "minimal"
