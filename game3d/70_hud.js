@@ -103,9 +103,15 @@ function showBanner(title, subtitle, colour) {
   const big = el("div", "lj-banner-title", hud.banner, title);
   big.style.color = colour || "#FFC607";
   el("div", "lj-banner-sub", hud.banner, subtitle || "");
-  hud.banner.classList.remove("show");
-  void hud.banner.offsetWidth;
-  hud.banner.classList.add("show");
+  G.bannerTime = 4.6;
+}
+
+function updateBanner(dt) {
+  if (G.bannerTime <= 0) { if (hud.banner.style.opacity !== "0") hud.banner.style.opacity = "0"; return; }
+  G.bannerTime -= dt;
+  const t = 4.6 - G.bannerTime;
+  hud.banner.style.opacity = String(clamp(Math.min(t / 0.3, G.bannerTime / 0.8), 0, 1));
+  hud.banner.style.transform = "scale(" + (1 + clamp(1 - t / 0.3, 0, 1) * 0.25).toFixed(3) + ")";
 }
 
 function fadeTo(opacity, seconds) {
@@ -248,6 +254,7 @@ function drawMap() {
   }
   for (const npc of G.npcs) if (npc.markerSprite && npc.markerSprite.visible && !npc.hidden) markers.push({ x: npc.x, z: npc.z, colour: npc.role === "crush" ? "#FF6FA5" : "#FFC607", size: 14, round: true });
   for (const pickup of G.pickups) if (!pickup.taken) markers.push({ x: pickup.x, z: pickup.z, colour: "#FFC607", size: 14, round: true, ring: true });
+  for (const buggy of G.buggies) markers.push({ x: buggy.x, z: buggy.z, colour: "#D9F23A", size: 11, round: true });
   if (G.config.mission.id === "backstage" && !G.backstage.reached) { const b = localToWorld(G.stages.sol, -2, 0, -12); markers.push({ x: b[0], z: b[2], colour: "#FFC607", size: 12, round: true, ring: true }); }
   for (const marker of markers) {
     let [x, y] = at(marker.x, marker.z);

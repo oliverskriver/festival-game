@@ -352,3 +352,13 @@ def game_page():
         recap_page()
     else:
         title_page()
+
+
+def show_footer():
+    """The small print under the game's pages."""
+    st.html(
+        '<div class="mil-footer"><b>Unofficial fan project.</b> Not affiliated with Musik i Lejet. '
+        + "Artist names, stages and times are from the public 2026 programme and partly estimated. "
+        + "No logos, photos, map artwork or music from the festival or the artists are used; the music is made by the computer. "
+        + "Team project for Introduction to Programming, Nova SBE 2026/27.</div>"
+    )

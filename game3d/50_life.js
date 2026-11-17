@@ -24,6 +24,8 @@ function updateTime(dt) {
   if (p.energy <= 3 && !p.warnedEnergy) { p.warnedEnergy = true; toast("You are exhausted. Eat something, get a coffee or rest in a tent."); }
   if (p.energy > 25) p.warnedEnergy = false;
   updateWatching();
+  // The last ten minutes: fireworks over the whole site.
+  if (G.minute >= rules.closes - 10 && !G.finale) { G.finale = true; launchFireworks(0, 0, 30); toast("Ten minutes left. Look up!", "live"); }
   if (G.minute >= rules.closes) endNight("closing");
 }
 
@@ -93,6 +95,7 @@ function buy(itemId, place) {
 function passOut() {
   const p = G.player;
   if (p.frozen) return;
+  if (p.driving) leaveBuggy(true);
   p.frozen = true;
   G.passedOut = true;
   closeMenu();
@@ -182,6 +185,12 @@ function updateFocus() {
       if (d < 2.2) { best = { pickup: pickup, label: pickup.label }; break; }
     }
   }
+  if (!best && !G.player.driving) {
+    for (const buggy of G.buggies) {
+      if (dist2d(G.player.x, G.player.z, buggy.x, buggy.z) < 2.8) { best = { buggy: buggy, label: "borrow the security buggy" }; break; }
+    }
+  }
+  if (G.player.driving) best = { leave: true, label: "get out of the buggy" };
   if (!best) {
     for (const place of G.places) {
       const action = PLACE_ACTIONS[place.kind];
@@ -196,7 +205,9 @@ function updateFocus() {
 function interact() {
   const focus = G.focus;
   if (!focus || G.player.frozen) return;
-  if (focus.npc) focus.npc.talk(focus.npc);
+  if (focus.leave) leaveBuggy();
+  else if (focus.buggy) enterBuggy(focus.buggy);
+  else if (focus.npc) focus.npc.talk(focus.npc);
   else if (focus.pickup) focus.pickup.take(focus.pickup);
   else if (focus.place) usePlace(focus.place);
 }
@@ -206,6 +217,7 @@ function interact() {
 function endNight(reason) {
   if (G.over) return;
   stopWatching();
+  if (G.player.driving) leaveBuggy(true);
   const minute = Math.min(Math.floor(G.minute), G.config.rules.closes);
   logEvent({ type: "end", minute: minute, reason: reason });
   G.over = true;

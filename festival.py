@@ -42,11 +42,11 @@ def main():
         app.planner_page()
     elif mode == "scores":
         game_screens.scores_page()
-        app.show_footer()
+        game_screens.show_footer()
     else:
         game_screens.game_page()
         if not playing:
-            app.show_footer()
+            game_screens.show_footer()
 
 
 main()

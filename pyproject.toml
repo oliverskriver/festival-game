@@ -1,7 +1,7 @@
 [project]
-name = "festival-planner"
+name = "festival-game"
 version = "0.1.0"
-description = "Festival Architect solo project, themed as an unofficial Musik i Lejet planner (Nova SBE 2026/27)"
+description = "En nat i Lejet: a 3D festival game built on top of the Festival Architect planner (team project, Nova SBE 2026/27)"
 requires-python = ">=3.12,<3.13"
 dependencies = [
     "streamlit==1.62.0",

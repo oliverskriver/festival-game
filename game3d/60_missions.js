@@ -495,6 +495,7 @@ function updateMissions(dt) {
   updateBackstage(dt);
   if (!G.missionDone && missionIsComplete()) {
     G.missionDone = true;
+    launchFireworks(G.player.x, G.player.z, 8);
     if (G.config.mission.id === "music" || G.config.mission.id === "party") { showBanner("MISSION COMPLETE", G.config.mission.name, "#FFC607"); blip("good"); }
   }
 }

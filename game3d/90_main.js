@@ -13,6 +13,7 @@ function resetGame() {
     signMaterials: [], lightPools: [], npcs: [], pickups: [], crushes: [], counted: {}, peakBuzz: 0,
     passedOut: false, kissed: false, wristband: false, missionDone: false, watching: null, focus: null,
     menuOpen: null, started: false, ready: false, player: null, crew: null, gateGuard: null, backstage: null, fast: false,
+    buggies: [], buggyHeat: 0, bannerTime: 0, finale: false,
   });
   bulbList.length = 0;
   crowd.people = [];
@@ -63,7 +64,9 @@ async function startGame(component) {
   buildPlayer();
   buildCrowd();
   buildMissions();
+  buildBuggies();
   buildBulbs();
+  buildShowtime();
   setupControls(renderer.domElement);
   // Let the crowd spread out before the first picture is shown.
   updateConcerts(0.016);
@@ -102,6 +105,7 @@ function step(dt) {
     updateCrowd(dt);
     updateConcerts(dt);
     updateMissions(dt);
+    updateBuggies(dt);
     updateMusic();
     for (const update of G.updaters) update(dt);
   } else if (!G.started && G.ready) {
@@ -114,6 +118,8 @@ function step(dt) {
   } else if (audio.ctx) updateMusic();
   if (!G.ready) return;
   updateWorld();
+  updateShowtime(dt);
+  updateBanner(dt);
   updateCamera(dt);
   updateHud();
   G.renderer.render(G.scene, G.camera);
@@ -147,7 +153,7 @@ export default function (component) {
     teleport: (x, z) => { G.player.x = x; G.player.z = z; camTarget.ready = false; },
     setTime: (minute) => { G.minute = minute; },
     start: () => startPlaying(),
-    fn: { interact: interact, chooseMenu: chooseMenu, key: handleKeyPress, endNight: endNight, buy: buy, updateFocus: updateFocus, passOut: passOut },
+    fn: { interact: interact, chooseMenu: chooseMenu, key: handleKeyPress, endNight: endNight, buy: buy, updateFocus: updateFocus, passOut: passOut, fireworks: launchFireworks },
   };
   startGame(component);
   return window.__lejet.stop;
