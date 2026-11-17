@@ -17,6 +17,14 @@ artists are used. The music in the game is made by the computer.
 uv run streamlit run festival.py
 ```
 
+## High scores online
+
+Online, the high scores are kept in a free Postgres database at Neon, because the host wipes its
+files on every restart. The app finds the database through the secret `DATABASE_URL` (Streamlit:
+app settings, Secrets; on your own computer: `.streamlit/secrets.toml`, never uploaded). Without
+it, or when the database does not answer, scores are kept in `data/festival.db` as before.
+See `specs/permanent-high-scores.md`.
+
 ## Run the tests
 
 ```

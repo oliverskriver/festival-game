@@ -11,6 +11,7 @@ import datetime
 import json
 import os
 import sqlite3
+import time
 
 import streamlit as st
 
@@ -231,12 +232,30 @@ def scores_url():
         return ""
 
 
+# When the online database does not answer (a school network may block it), we stop trying for
+# a while, so pages do not keep waiting for it. Scores are then kept in the local file.
+SECONDS_BEFORE_TRYING_AGAIN = 300
+online_down_until = 0.0
+
+
+def online_is_worth_trying():
+    """True when the app has an online address and the database has not just failed."""
+    return bool(scores_url()) and time.time() >= online_down_until
+
+
+def online_failed(error):
+    """Remember that the online database did not answer, and say so in the server log."""
+    global online_down_until
+    online_down_until = time.time() + SECONDS_BEFORE_TRYING_AGAIN
+    print("Online high scores not reachable, using the local file for a while:", type(error).__name__)
+
+
 def connect_online():
     """Open the online database and make sure the runs table exists (same columns as in the file)."""
     import psycopg  # only needed online, so it is imported here
     from psycopg.rows import dict_row
 
-    connection = psycopg.connect(scores_url(), connect_timeout=5, row_factory=dict_row)
+    connection = psycopg.connect(scores_url(), connect_timeout=4, row_factory=dict_row)
     connection.execute(
         """
         CREATE TABLE IF NOT EXISTS runs (
@@ -279,13 +298,13 @@ def save_run(run):
         datetime.datetime.now().strftime("%Y-%m-%d %H:%M"),
     )
     columns = "player, day, mission, points, stars, title, completed, summary, played_at"
-    if scores_url():
+    if online_is_worth_trying():
         try:
             with connect_online() as connection:  # "with" saves (commits) and closes it for us
                 connection.execute("INSERT INTO runs (" + columns + ") VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)", values)
             return None
         except Exception as error:
-            print("Online high scores not reachable, saving in the file instead:", error)
+            online_failed(error)
     return write("INSERT INTO runs (" + columns + ") VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)", values)
 
 
@@ -294,12 +313,12 @@ def get_runs(limit=20):
 
     Read from the online database if there is one; if it cannot be reached, from the file."""
     runs = None
-    if scores_url():
+    if online_is_worth_trying():
         try:
             with connect_online() as connection:
                 runs = connection.execute("SELECT * FROM runs ORDER BY points DESC, id DESC LIMIT %s", (limit,)).fetchall()
         except Exception as error:
-            print("Online high scores not reachable, reading the file instead:", error)
+            online_failed(error)
     if runs is None:
         runs = read("SELECT * FROM runs ORDER BY points DESC, id DESC LIMIT ?", (limit,))
     for run in runs:

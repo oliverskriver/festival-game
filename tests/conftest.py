@@ -21,6 +21,7 @@ def fresh_db(tmp_path, monkeypatch):
     monkeypatch.setattr(db, "DB_PATH", str(path))
     # And never the online high-score database, even if this computer has its address in a secrets file.
     monkeypatch.setenv("DATABASE_URL", "")
+    monkeypatch.setattr(db, "online_down_until", 0.0)  # every test starts with the database "not failed"
     return path
 
 
