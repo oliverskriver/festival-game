@@ -16,7 +16,7 @@ We took the solo project (a festival planner) and extended it into a game.
 The link between the two halves: in the game you can choose **"Your own programme"**, and then the
 artists you booked in the planner are the ones playing on the stages.
 
-Run it: `uv run streamlit run festival.py`. Test it: `uv run pytest` (95 tests).
+Run it: `uv run streamlit run festival.py`. Test it: `uv run pytest` (100 tests).
 
 ## 2. The one idea to remember
 
@@ -151,8 +151,8 @@ minute; `updateSkyAndLight` blends between two steps.
 
 ## 8. How we verify it
 
-- **95 automatic tests** (`uv run pytest`): the 41 planner tests, 45 for the game's rules, content
-  and storage, and 9 that click through the game's pages.
+- **100 automatic tests** (`uv run pytest`): the 41 planner tests, 49 for the game's rules, content
+  and storage, and 10 that click through the game's pages.
 - The rule tests were written before the rule code (branch `game-rules`: a red commit, then green).
   The page tests were written after the pages.
 - **The 3D part has no automatic tests.** It was checked by hand in the browser: buying, a counted
