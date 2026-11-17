@@ -32,6 +32,8 @@ ITEMS = {
     "water": {"name": "Vand", "price": 0, "buzz": -6, "energy": 3},
     "food": {"name": "Mad", "price": 110, "buzz": -10, "energy": 25},
     "coffee": {"name": "Kaffe", "price": 45, "buzz": -4, "energy": 20},
+    # Something you buy for somebody else: it costs money but you do not drink it yourself.
+    "gift": {"name": "En omgang til en ven", "price": 65, "buzz": 0, "energy": 0},
 }
 
 BUZZ_FADE_PER_MINUTE = 0.15  # you sober up 9 points per hour
@@ -68,6 +70,16 @@ LOOK_CHOICES = {
     "hat": ["none", "bucket", "cap", "cowboy"],
     "glasses": ["none", "sun"],
     "shoes": ["sneakers", "boots", "sandals"],
+    "into": ["everyone", "women", "men"],  # who the flirt mission introduces you to
+}
+
+EVENT_TYPES = ["buy", "watch", "kiss", "backstage", "caught", "end"]
+END_REASONS = ["closing", "went_home", "passed_out", "thrown_out"]
+ARRIVALS = {
+    "14:00 · the gates open (the whole day)": 14 * 60,
+    "18:00 · early evening": 18 * 60,
+    "20:30 · just before the headliner": 20 * 60 + 30,
+    "23:00 · late night": 23 * 60,
 }
 
 
@@ -79,6 +91,46 @@ def clock(minute):
 def default_look():
     """The outfit you get before you change anything."""
     return {part: choices[0] for part, choices in LOOK_CHOICES.items()}
+
+
+# ---------- cleaning what the browser sends ----------
+
+
+def inside_hours(value):
+    """A minute as a whole number, pulled inside the festival's opening hours."""
+    return max(OPENS, min(CLOSES, int(value)))
+
+
+def clean_events(raw):
+    """Keep only events that are well formed. The list comes from the browser, so it is not trusted.
+
+    Returns a new list with only the fields the referee uses.
+    """
+    cleaned = []
+    if not isinstance(raw, list):
+        return cleaned
+    for event in raw[:5000]:
+        if not isinstance(event, dict) or event.get("type") not in EVENT_TYPES:
+            continue
+        kind = event["type"]
+        try:
+            if kind == "buy":
+                if event.get("item") not in ITEMS:
+                    continue
+                cleaned.append({"type": "buy", "minute": inside_hours(event["minute"]), "item": event["item"]})
+            elif kind == "watch":
+                start, end = inside_hours(event["from"]), inside_hours(event["to"])
+                if not isinstance(event.get("act"), str) or end <= start:
+                    continue
+                cleaned.append({"type": "watch", "act": event["act"], "from": start, "to": end})
+            elif kind == "end":
+                reason = event.get("reason") if event.get("reason") in END_REASONS else "unknown"
+                cleaned.append({"type": "end", "minute": inside_hours(event["minute"]), "reason": reason})
+            else:
+                cleaned.append({"type": kind, "minute": inside_hours(event["minute"])})
+        except (KeyError, TypeError, ValueError):
+            continue  # a minute that is missing or not a number
+    return cleaned
 
 
 # ---------- money ----------
@@ -192,6 +244,7 @@ def summarise(events, acts):
         "waters": counts["water"],
         "meals": counts["food"],
         "coffees": counts["coffee"],
+        "gifts": counts["gift"],
         "money_left": money_left(events),
         "spent": START_MONEY - money_left(events),
         "peak_buzz": round(peak_buzz),
@@ -225,18 +278,29 @@ def mission_completed(mission, summary, acts):
     return False
 
 
+def score_lines(mission, summary, acts):
+    """The score, line by line, as (text, points). The points always add up to the score."""
+    lines = []
+    seen = len(summary["concerts"])
+    if seen > 0:
+        lines.append((str(seen) + (" concert seen" if seen == 1 else " concerts seen"), seen * POINTS_PER_CONCERT))
+    if mission_completed(mission, summary, acts):
+        lines.append(("Mission completed: " + MISSIONS[mission]["name"], POINTS_FOR_MISSION))
+    if summary["end_reason"] == "closing":
+        lines.append(("Stayed until the lights came on", POINTS_FOR_STAYING_TO_THE_END))
+    if summary["passed_out"]:
+        lines.append(("Passed out", -POINTS_LOST_FOR_PASSING_OUT))
+    if summary["thrown_out"]:
+        lines.append(("Thrown out by security", -POINTS_LOST_FOR_BEING_THROWN_OUT))
+    total = sum(points for _, points in lines)
+    if total < 0:
+        lines.append(("A score cannot go below zero", -total))
+    return lines
+
+
 def score(mission, summary, acts):
     """Points for the night. Never below zero."""
-    points = len(summary["concerts"]) * POINTS_PER_CONCERT
-    if mission_completed(mission, summary, acts):
-        points = points + POINTS_FOR_MISSION
-    if summary["end_reason"] == "closing":
-        points = points + POINTS_FOR_STAYING_TO_THE_END
-    if summary["passed_out"]:
-        points = points - POINTS_LOST_FOR_PASSING_OUT
-    if summary["thrown_out"]:
-        points = points - POINTS_LOST_FOR_BEING_THROWN_OUT
-    return max(0, points)
+    return sum(points for _, points in score_lines(mission, summary, acts))
 
 
 def stars(points):
@@ -267,10 +331,11 @@ def check_choice(day_id, mission):
     return ACCEPTED
 
 
-def build_config(day_id, mission, look, player_name):
+def build_config(day_id, mission, look, player_name, start_minute=OPENS):
     """Everything the 3D world needs to know, as plain data that can be sent to the browser."""
     acts = programme.acts_for(day_id)
     return {
+        "start_minute": inside_hours(start_minute),
         "player": {"name": player_name, "look": look},
         "day": {"id": day_id, "label": programme.day_label(day_id)},
         "mission": {"id": mission, "name": MISSIONS[mission]["name"], "goal": MISSIONS[mission]["goal"]},
@@ -296,6 +361,7 @@ def build_config(day_id, mission, look, player_name):
 
 def finish_night(player_name, day_id, mission, events, acts):
     """Work out the result of a finished night, save it for the high-score list and return it."""
+    events = clean_events(events)
     summary = summarise(events, acts)
     points = score(mission, summary, acts)
     run = {
@@ -307,6 +373,7 @@ def finish_night(player_name, day_id, mission, events, acts):
         "title": title(points),
         "completed": mission_completed(mission, summary, acts),
         "summary": summary,
+        "score_lines": score_lines(mission, summary, acts),
     }
     db.save_run(run)
     return run

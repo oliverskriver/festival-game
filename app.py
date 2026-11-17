@@ -13,8 +13,6 @@ import streamlit as st
 import db
 import logic
 
-st.set_page_config(page_title="Musik i Lejet planner", page_icon="🎪", layout="wide")
-
 HERE = os.path.dirname(os.path.abspath(__file__))
 
 # How tall one minute is in the timetable drawing, in pixels.
@@ -282,8 +280,8 @@ def show_footer():
     )
 
 
-def main():
-    """Draw the whole page, top to bottom."""
+def planner_page():
+    """Draw the whole planner, top to bottom."""
     load_style()
     show_hero()
     show_budget()
@@ -304,4 +302,8 @@ def main():
     show_footer()
 
 
-main()
+if __name__ == "__main__":
+    # Started directly (uv run streamlit run app.py): show only the planner.
+    # The whole product, game included, starts from festival.py.
+    st.set_page_config(page_title="Musik i Lejet planner", page_icon="🎪", layout="wide")
+    planner_page()

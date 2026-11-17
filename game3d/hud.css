@@ -1,0 +1,84 @@
+/* The look of everything drawn on top of the 3D picture. Colours and type follow the planner. */
+#lejet-root { position: fixed; inset: 0; z-index: 999990; background: #000; overflow: hidden; font-family: "Helvetica Neue", Helvetica, Arial, sans-serif; color: #fff; user-select: none; -webkit-user-select: none; }
+#lejet-root canvas.lj-view { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+#lejet-root .lj-panel { position: absolute; background: rgba(8, 9, 14, 0.78); border: 2px solid #000; padding: 10px 14px; }
+#lejet-root .lj-topleft { top: 16px; left: 16px; min-width: 280px; max-width: 400px; border-left: 8px solid #FFC607; }
+#lejet-root .lj-clock { font-size: 44px; font-weight: 800; letter-spacing: -2px; line-height: 1; }
+#lejet-root .lj-day { font-size: 12px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; color: #FFC607; margin-top: 2px; }
+#lejet-root .lj-mission { margin-top: 10px; border-top: 1px solid rgba(255,255,255,0.25); padding-top: 8px; }
+#lejet-root .lj-mission-title { font-size: 13px; font-weight: 800; letter-spacing: 1.2px; color: #FF471C; }
+#lejet-root .lj-line { font-size: 14px; line-height: 1.45; font-weight: 600; }
+#lejet-root .lj-line.done { color: #9BE28A; }
+#lejet-root .lj-line.failed { color: #FF7A5A; }
+#lejet-root .lj-topright { top: 16px; right: 16px; width: 250px; border-right: 8px solid #3374F2; }
+#lejet-root .lj-money { font-size: 34px; font-weight: 800; letter-spacing: -1.5px; color: #9BE28A; text-align: right; line-height: 1.1; }
+#lejet-root .lj-bar-row { display: flex; align-items: center; gap: 8px; margin-top: 6px; }
+#lejet-root .lj-bar-label { font-size: 10px; font-weight: 800; letter-spacing: 1.2px; width: 62px; }
+#lejet-root .lj-bar { position: relative; flex: 1; height: 12px; background: rgba(255,255,255,0.18); }
+#lejet-root .lj-bar-fill { height: 100%; width: 0%; }
+#lejet-root .lj-bar-mark { position: absolute; top: -3px; bottom: -3px; width: 2px; background: #fff; }
+#lejet-root .lj-bar.warn { outline: 2px solid #fff; animation: lj-blink 0.7s infinite; }
+#lejet-root .lj-strikes { margin-top: 8px; font-size: 11px; font-weight: 800; letter-spacing: 1px; color: #FF471C; min-height: 0; }
+#lejet-root .lj-map { position: absolute; left: 18px; bottom: 18px; width: 208px; height: 208px; border-radius: 50%; border: 4px solid #000; box-shadow: 0 0 0 3px #FFC607, 0 8px 30px rgba(0,0,0,0.5); overflow: visible; }
+#lejet-root .lj-map canvas { width: 100%; height: 100%; border-radius: 50%; display: block; }
+#lejet-root .lj-map-n { position: absolute; left: 50%; top: 50%; width: 22px; height: 22px; line-height: 22px; text-align: center; font-size: 12px; font-weight: 800; background: #FFC607; color: #000; border-radius: 50%; border: 2px solid #000; }
+#lejet-root .lj-now { right: 16px; bottom: 16px; width: 330px; border-right: 8px solid #FF471C; padding: 8px 12px; }
+#lejet-root .lj-now-row { font-size: 12px; line-height: 1.5; display: flex; gap: 8px; color: rgba(255,255,255,0.72); }
+#lejet-root .lj-now-row b { width: 82px; flex: none; font-weight: 800; color: #fff; }
+#lejet-root .lj-now-row.live span { color: #FFC607; font-weight: 800; }
+#lejet-root .lj-prompt { position: absolute; left: 50%; bottom: 74px; transform: translateX(-50%); background: rgba(8,9,14,0.85); border: 2px solid #000; padding: 9px 18px; font-size: 17px; font-weight: 700; opacity: 0; transition: opacity 0.15s; white-space: nowrap; }
+#lejet-root .lj-prompt b { display: inline-block; background: #FFC607; color: #000; padding: 1px 9px; margin-right: 4px; font-weight: 800; }
+#lejet-root .lj-keys { position: absolute; left: 50%; bottom: 16px; transform: translateX(-50%); font-size: 11px; font-weight: 600; letter-spacing: 0.4px; color: rgba(255,255,255,0.75); background: rgba(8,9,14,0.55); padding: 4px 12px; white-space: nowrap; }
+#lejet-root .lj-toasts { position: absolute; top: 18px; left: 50%; transform: translateX(-50%); display: flex; flex-direction: column; align-items: center; gap: 6px; width: min(640px, 44vw); pointer-events: none; }
+#lejet-root .lj-toast { background: rgba(8,9,14,0.88); border-left: 6px solid #fff; padding: 8px 14px; font-size: 15px; font-weight: 600; animation: lj-in 0.25s; transition: opacity 0.6s; max-width: 100%; }
+#lejet-root .lj-toast.good { border-left-color: #9BE28A; }
+#lejet-root .lj-toast.bad { border-left-color: #FF471C; }
+#lejet-root .lj-toast.live { border-left-color: #FFC607; color: #FFC607; font-weight: 800; }
+#lejet-root .lj-toast.out { opacity: 0; }
+#lejet-root .lj-banner { position: absolute; left: 0; right: 0; top: 30%; text-align: center; opacity: 0; pointer-events: none; }
+#lejet-root .lj-banner.show { animation: lj-banner 4.6s forwards; }
+#lejet-root .lj-banner-title { font-size: clamp(40px, 7vw, 96px); font-weight: 800; letter-spacing: -3px; line-height: 1; text-shadow: 0 4px 0 #000, 0 0 40px rgba(0,0,0,0.6); }
+#lejet-root .lj-banner-sub { font-size: 20px; font-weight: 700; margin-top: 10px; text-shadow: 0 2px 0 #000; }
+#lejet-root .lj-fade { position: absolute; inset: 0; background: #000; opacity: 0; pointer-events: none; }
+#lejet-root .lj-vignette { position: absolute; inset: 0; pointer-events: none; opacity: 0; background: radial-gradient(ellipse at center, rgba(0,0,0,0) 35%, rgba(0,0,0,0.95) 100%); }
+#lejet-root .lj-menu { display: none; position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); width: min(560px, 90vw); background: #FDF5C6; color: #000; border: 3px solid #000; box-shadow: 10px 10px 0 #000; padding: 20px 22px; max-height: 84vh; overflow: auto; }
+#lejet-root .lj-menu.show { display: block; }
+#lejet-root .lj-menu.wide { width: min(880px, 94vw); }
+#lejet-root .lj-menu-title { font-size: 28px; font-weight: 800; letter-spacing: -1.4px; line-height: 1.05; }
+#lejet-root .lj-menu-text { font-size: 16px; line-height: 1.4; margin: 8px 0 12px; }
+#lejet-root .lj-choice { display: flex; align-items: center; gap: 12px; width: 100%; text-align: left; background: #000; color: #FFF153; border: 0; padding: 11px 14px; margin-top: 7px; font: 700 16px "Helvetica Neue", Helvetica, Arial, sans-serif; cursor: pointer; }
+#lejet-root .lj-choice:hover { background: #3374F2; color: #fff; }
+#lejet-root .lj-choice b { background: #FFF153; color: #000; padding: 1px 9px; flex: none; }
+#lejet-root .lj-menu-hint { font-size: 12px; font-weight: 700; letter-spacing: 0.6px; text-transform: uppercase; margin-top: 12px; opacity: 0.6; }
+#lejet-root .lj-prog { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-top: 12px; }
+#lejet-root .lj-prog h3 { font-size: 18px; font-weight: 800; letter-spacing: -0.6px; margin: 0 0 6px; padding: 4px 8px; background: #000; color: #FFF153; }
+#lejet-root .lj-prog-act { display: flex; flex-direction: column; padding: 6px 8px; margin-bottom: 5px; background: #fff; border: 2px solid #000; font-size: 14px; }
+#lejet-root .lj-prog-act b { font-size: 12px; }
+#lejet-root .lj-prog-act span { font-weight: 800; }
+#lejet-root .lj-prog-act.past { opacity: 0.4; }
+#lejet-root .lj-prog-act.live { background: #FF471C; color: #fff; }
+#lejet-root .lj-small { font-size: 13px; line-height: 1.4; opacity: 0.8; }
+#lejet-root .lj-page p { font-size: 15px; line-height: 1.4; }
+#lejet-root .lj-help { display: grid; grid-template-columns: max-content 1fr; gap: 6px 14px; font-size: 15px; margin: 10px 0; }
+#lejet-root .lj-help b { background: #000; color: #FFF153; padding: 1px 8px; white-space: nowrap; }
+#lejet-root .lj-start { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background: rgba(8, 9, 14, 0.62); }
+#lejet-root .lj-start-card { width: min(620px, 92vw); background: #FDF5C6; color: #000; border: 3px solid #000; box-shadow: 12px 12px 0 #FF471C; padding: 26px 30px; }
+#lejet-root .lj-start-kicker { font-size: 12px; font-weight: 800; letter-spacing: 1.6px; color: #3374F2; }
+#lejet-root .lj-start-card h1 { font-size: 20px; font-weight: 800; letter-spacing: 1px; margin: 12px 0 0; color: #FF471C; }
+#lejet-root .lj-start-card h2 { font-size: 46px; font-weight: 800; letter-spacing: -2.6px; line-height: 1; margin: 2px 0 8px; }
+#lejet-root .lj-start-card p { font-size: 17px; line-height: 1.35; margin: 0 0 14px; }
+#lejet-root .lj-start-keys { display: grid; grid-template-columns: 1fr 1fr; gap: 5px 18px; margin-bottom: 18px; }
+#lejet-root .lj-key-row { display: flex; gap: 10px; font-size: 14px; align-items: center; }
+#lejet-root .lj-key-row b { background: #000; color: #FFF153; padding: 1px 8px; min-width: 96px; text-align: center; font-size: 13px; }
+#lejet-root .lj-start-button { background: #000; color: #FFF153; border: 0; font: 800 22px "Helvetica Neue", Helvetica, Arial, sans-serif; letter-spacing: -0.5px; padding: 14px 26px; cursor: pointer; width: 100%; }
+#lejet-root .lj-start-button:hover { background: #3374F2; color: #fff; }
+#lejet-root .lj-start-button:disabled { opacity: 0.45; cursor: wait; }
+#lejet-root .lj-loading { font-size: 13px; font-weight: 700; margin-top: 8px; min-height: 16px; }
+#lejet-root .lj-ending { position: absolute; inset: 0; display: none; flex-direction: column; align-items: center; justify-content: center; background: rgba(0,0,0,0.86); text-align: center; }
+#lejet-root .lj-ending.show { display: flex; animation: lj-in 1s; }
+#lejet-root .lj-ending-title { font-size: clamp(36px, 6vw, 84px); font-weight: 800; letter-spacing: -3px; color: #FFC607; }
+#lejet-root .lj-ending-sub { font-size: 20px; font-weight: 600; margin-top: 8px; }
+#lejet-root .lj-ending-wait { font-size: 13px; font-weight: 800; letter-spacing: 2px; text-transform: uppercase; margin-top: 30px; opacity: 0.7; }
+@keyframes lj-in { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: none; } }
+@keyframes lj-blink { 50% { outline-color: transparent; } }
+@keyframes lj-banner { 0% { opacity: 0; transform: scale(1.25); } 8% { opacity: 1; transform: scale(1); } 80% { opacity: 1; } 100% { opacity: 0; } }
