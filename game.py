@@ -215,6 +215,11 @@ def concerts_seen(events, acts):
     return seen
 
 
+def acts_from(acts, minute):
+    """The acts you can still watch long enough to count when you arrive at this minute."""
+    return [act for act in acts if act["end"] - minute >= MINUTES_TO_COUNT_A_CONCERT]
+
+
 def favourites(acts):
     """The three artists with the biggest crowd pull: the ones the music mission wants you to see."""
     biggest_first = sorted(acts, key=lambda act: (-act["pull"], act["start"]))
@@ -320,20 +325,22 @@ def title(points):
 # ---------- starting and finishing a game ----------
 
 
-def check_choice(day_id, mission):
-    """Return "" when a game can start with this day and mission, otherwise the reason it cannot."""
+def check_choice(day_id, mission, start_minute=OPENS):
+    """Return "" when a game can start with this day, mission and arrival time, otherwise the reason it cannot."""
     if day_id not in programme.day_ids():
         return "That day is not on the programme."
     if mission not in MISSIONS:
         return "That mission does not exist."
     if len(programme.acts_for(day_id)) == 0:
         return "Your own programme is empty. Book at least one artist in the planner first."
+    if len(acts_from(programme.acts_for(day_id), start_minute)) == 0:
+        return "Nobody is playing after " + clock(start_minute) + " that day. Arrive earlier."
     return ACCEPTED
 
 
 def build_config(day_id, mission, look, player_name, start_minute=OPENS):
     """Everything the 3D world needs to know, as plain data that can be sent to the browser."""
-    acts = programme.acts_for(day_id)
+    acts = acts_from(programme.acts_for(day_id), start_minute)
     return {
         "start_minute": inside_hours(start_minute),
         "player": {"name": player_name, "look": look},

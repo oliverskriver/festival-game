@@ -219,7 +219,7 @@ def setup_page():
     st.html('<p class="lj-note">A whole day takes about ten minutes to play. In the game, hold T to let time fly.</p>')
 
     if st.button("ENTER THE FESTIVAL", key="enter_festival", type="primary", width="stretch"):
-        problem = game.check_choice(day_id, mission)
+        problem = game.check_choice(day_id, mission, game.ARRIVALS[arrival])
         if name.strip() == "":
             problem = "Write your name first, so your score can go on the high-score list."
         if problem != game.ACCEPTED:
@@ -259,7 +259,7 @@ def finish_game(config, payload):
     if payload.get("reason") == "error":
         st.session_state["game_step"] = "setup"
         return
-    acts = programme.acts_for(config["day"]["id"])
+    acts = config["acts"]  # the same acts the game was played with
     run = game.finish_night(config["player"]["name"], config["day"]["id"], config["mission"]["id"], payload.get("events"), acts)
     st.session_state["last_run"] = run
     st.session_state["game_step"] = "recap"
@@ -337,8 +337,9 @@ def dev_shortcut():
         saved = db.get_player()
         look = saved["look"] if saved else game.default_look()
         day_id = st.query_params.get("day", "fri")
-        if game.check_choice(day_id, mission) == game.ACCEPTED:
-            start_game(day_id, mission, look, "Tester", int(st.query_params.get("time", "1230")))
+        start_minute = int(st.query_params.get("time", "1230"))
+        if game.check_choice(day_id, mission, start_minute) == game.ACCEPTED:
+            start_game(day_id, mission, look, "Tester", start_minute)
 
 
 def game_page():

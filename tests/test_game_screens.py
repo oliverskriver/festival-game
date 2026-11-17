@@ -86,9 +86,20 @@ def test_the_planners_programme_can_be_played(fresh_db):
     app = click(start_app(), "start_night")
     app.radio(key="pick_day").set_value("own").run()
     app.text_input(key="player_name").set_value("Oliver").run()
+    app.radio(key="pick_arrival").set_value(list(game.ARRIVALS)[0]).run()  # 14:00, before Havgus plays
     app = click(app, "enter_festival")
     assert app.session_state["game_step"] == "playing"
     assert [act["artist"] for act in app.session_state["game_config"]["acts"]] == ["Havgus"]
+
+
+def test_arriving_after_the_last_act_is_explained_on_screen(fresh_db):
+    assert book("Havgus", "Solscenen", "16:00") == ""
+    app = click(start_app(), "start_night")
+    app.radio(key="pick_day").set_value("own").run()
+    app.text_input(key="player_name").set_value("Oliver").run()
+    app = click(app, "enter_festival")  # the default arrival is 20:30, after Havgus has finished
+    assert "Nobody is playing after 20:30" in page_text(app)
+    assert app.session_state["game_step"] == "setup"
 
 
 def test_the_recap_shows_what_the_referee_counted(fresh_db):
