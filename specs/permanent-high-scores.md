@@ -7,7 +7,7 @@ wiped too. The team wants scores to stay after people have played.
 
 ## What
 - High scores (the `runs` table) are saved in a free online Postgres database (Neon) when the app
-  knows its address: the secret `SCORES_DATABASE_URL` (Streamlit secrets, or an environment
+  knows its address: the secret `DATABASE_URL` (Streamlit secrets, or an environment
   variable of the same name).
 - Without that secret everything stays in the local file `data/festival.db`, exactly as before.
   This is what happens on our own computers and in the tests.

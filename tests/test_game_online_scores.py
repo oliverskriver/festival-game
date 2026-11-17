@@ -22,12 +22,12 @@ def test_without_an_address_scores_stay_in_the_file(fresh_db):
 
 
 def test_the_address_is_read_from_the_environment(fresh_db, monkeypatch):
-    monkeypatch.setenv("SCORES_DATABASE_URL", "postgresql://example/scores")
+    monkeypatch.setenv("DATABASE_URL", "postgresql://example/scores")
     assert db.scores_url() == "postgresql://example/scores"
 
 
 def test_an_unreachable_online_database_does_not_lose_the_night(fresh_db, monkeypatch):
-    monkeypatch.setenv("SCORES_DATABASE_URL", NOBODY_HOME)
+    monkeypatch.setenv("DATABASE_URL", NOBODY_HOME)
     game.finish_night("Oliver", "sat", "music", WATCHED, PROGRAMME)  # must not crash
     runs = db.get_runs()  # must not crash either; falls back to the file
     assert [run["player"] for run in runs] == ["Oliver"]
@@ -35,13 +35,13 @@ def test_an_unreachable_online_database_does_not_lose_the_night(fresh_db, monkey
 
 
 # Runs only when a real test database is given, for example:
-#   SCORES_TEST_DATABASE_URL="postgresql://..." uv run pytest tests/test_game_online_scores.py
-REAL_DATABASE = os.environ.get("SCORES_TEST_DATABASE_URL", "")
+#   TEST_DATABASE_URL="postgresql://..." uv run pytest tests/test_game_online_scores.py
+REAL_DATABASE = os.environ.get("TEST_DATABASE_URL", "")
 
 
 @pytest.mark.skipif(not REAL_DATABASE, reason="no real online database given")
 def test_a_night_is_saved_in_the_real_online_database(fresh_db, monkeypatch):
-    monkeypatch.setenv("SCORES_DATABASE_URL", REAL_DATABASE)
+    monkeypatch.setenv("DATABASE_URL", REAL_DATABASE)
     name = "pytest-" + uuid.uuid4().hex[:8]
     try:
         game.finish_night(name, "sat", "music", WATCHED, PROGRAMME)

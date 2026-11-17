@@ -218,15 +218,15 @@ def reset_plan():
 # ---------- where the high scores live ----------
 # On our computers and in the tests: the local file, like everything else.
 # Online: a free Postgres database at Neon. Its address (with its password inside) is the secret
-# SCORES_DATABASE_URL, kept in Streamlit's secrets settings, never in the code or on GitHub.
+# DATABASE_URL, kept in Streamlit's secrets settings, never in the code or on GitHub.
 
 
 def scores_url():
     """The online database's address, or "" when there is none (then the local file is used)."""
-    if "SCORES_DATABASE_URL" in os.environ:  # tests and our own computers can set this
-        return os.environ["SCORES_DATABASE_URL"]
+    if "DATABASE_URL" in os.environ:  # tests and our own computers can set this
+        return os.environ["DATABASE_URL"]
     try:
-        return st.secrets.get("SCORES_DATABASE_URL", "")
+        return st.secrets.get("DATABASE_URL", "")
     except Exception:  # no secrets file at all
         return ""
 
