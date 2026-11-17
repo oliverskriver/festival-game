@@ -52,3 +52,20 @@ def test_a_night_is_saved_in_the_real_online_database(fresh_db, monkeypatch):
         assert db.read("SELECT COUNT(*) AS n FROM runs")[0]["n"] == 0  # nothing went to the file
     finally:
         db.delete_online_runs(name)
+
+
+def test_after_one_failure_the_game_stops_trying_for_a_while(fresh_db, monkeypatch):
+    """A blocked network must not make every page wait for the database again and again."""
+    monkeypatch.setenv("DATABASE_URL", NOBODY_HOME)
+    attempts = []
+
+    def unreachable():
+        attempts.append(1)
+        raise ConnectionError("nobody home")
+
+    monkeypatch.setattr(db, "connect_online", unreachable)
+    game.finish_night("Oliver", "sat", "music", WATCHED, PROGRAMME)
+    db.get_runs()
+    game.finish_night("Ana", "sat", "music", WATCHED, PROGRAMME)
+    assert len(attempts) == 1
+    assert len(db.get_runs()) == 2  # both nights are safe in the file
