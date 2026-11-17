@@ -1,5 +1,8 @@
 """Storage for the festival planner and the game. Everything is saved in one SQLite file: data/festival.db.
 
+One exception: online, the high scores go to a free Postgres database instead, because the online
+host wipes its files on every restart (see "where the high scores live" below).
+
 Nothing is kept in memory between two calls: every function opens the file, does one thing and
 closes it again. That is why the plan is still there after the app is stopped and started again.
 """
@@ -8,6 +11,8 @@ import datetime
 import json
 import os
 import sqlite3
+
+import streamlit as st
 
 # The database file. Tests point this at a throwaway file instead.
 DB_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data", "festival.db")
@@ -210,28 +215,93 @@ def reset_plan():
 # ---------- the game: finished nights (high scores) and the player's outfit ----------
 
 
-def save_run(run):
-    """Save one finished night. The summary (a dictionary) is stored as JSON text."""
-    return write(
-        "INSERT INTO runs (player, day, mission, points, stars, title, completed, summary, played_at)"
-        " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
-        (
-            run["player"],
-            run["day"],
-            run["mission"],
-            run["points"],
-            run["stars"],
-            run["title"],
-            1 if run["completed"] else 0,
-            json.dumps(run["summary"]),
-            datetime.datetime.now().strftime("%Y-%m-%d %H:%M"),
-        ),
+# ---------- where the high scores live ----------
+# On our computers and in the tests: the local file, like everything else.
+# Online: a free Postgres database at Neon. Its address (with its password inside) is the secret
+# SCORES_DATABASE_URL, kept in Streamlit's secrets settings, never in the code or on GitHub.
+
+
+def scores_url():
+    """The online database's address, or "" when there is none (then the local file is used)."""
+    if "SCORES_DATABASE_URL" in os.environ:  # tests and our own computers can set this
+        return os.environ["SCORES_DATABASE_URL"]
+    try:
+        return st.secrets.get("SCORES_DATABASE_URL", "")
+    except Exception:  # no secrets file at all
+        return ""
+
+
+def connect_online():
+    """Open the online database and make sure the runs table exists (same columns as in the file)."""
+    import psycopg  # only needed online, so it is imported here
+    from psycopg.rows import dict_row
+
+    connection = psycopg.connect(scores_url(), connect_timeout=5, row_factory=dict_row)
+    connection.execute(
+        """
+        CREATE TABLE IF NOT EXISTS runs (
+            id SERIAL PRIMARY KEY,
+            player TEXT NOT NULL,
+            day TEXT NOT NULL,
+            mission TEXT NOT NULL,
+            points INTEGER NOT NULL,
+            stars INTEGER NOT NULL,
+            title TEXT NOT NULL,
+            completed INTEGER NOT NULL,
+            summary TEXT NOT NULL,
+            played_at TEXT NOT NULL
+        )
+        """
     )
+    return connection
+
+
+def delete_online_runs(player):
+    """Remove one player's nights from the online database. Only the tests use this, to clean up."""
+    with connect_online() as connection:
+        connection.execute("DELETE FROM runs WHERE player = %s", (player,))
+
+
+def save_run(run):
+    """Save one finished night: online if the app has a database address, otherwise in the file.
+
+    The summary (a dictionary) is stored as JSON text. If the online database cannot be reached,
+    the night is saved in the file instead, so a player never loses it to a crash."""
+    values = (
+        run["player"],
+        run["day"],
+        run["mission"],
+        run["points"],
+        run["stars"],
+        run["title"],
+        1 if run["completed"] else 0,
+        json.dumps(run["summary"]),
+        datetime.datetime.now().strftime("%Y-%m-%d %H:%M"),
+    )
+    columns = "player, day, mission, points, stars, title, completed, summary, played_at"
+    if scores_url():
+        try:
+            with connect_online() as connection:  # "with" saves (commits) and closes it for us
+                connection.execute("INSERT INTO runs (" + columns + ") VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)", values)
+            return None
+        except Exception as error:
+            print("Online high scores not reachable, saving in the file instead:", error)
+    return write("INSERT INTO runs (" + columns + ") VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)", values)
 
 
 def get_runs(limit=20):
-    """The saved nights, best score first (the newest first when two scores are equal)."""
-    runs = read("SELECT * FROM runs ORDER BY points DESC, id DESC LIMIT ?", (limit,))
+    """The saved nights, best score first (the newest first when two scores are equal).
+
+    Read from the online database if there is one; if it cannot be reached, from the file."""
+    runs = None
+    if scores_url():
+        try:
+            with connect_online() as connection:
+                runs = connection.execute("SELECT * FROM runs ORDER BY points DESC, id DESC LIMIT %s", (limit,)).fetchall()
+        except Exception as error:
+            print("Online high scores not reachable, reading the file instead:", error)
+    if runs is None:
+        runs = read("SELECT * FROM runs ORDER BY points DESC, id DESC LIMIT ?", (limit,))
     for run in runs:
         run["summary"] = json.loads(run["summary"])
         run["completed"] = run["completed"] == 1

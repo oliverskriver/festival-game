@@ -19,6 +19,8 @@ def fresh_db(tmp_path, monkeypatch):
     """Point db.py at a brand-new database file, so a test never touches the real plan."""
     path = tmp_path / "festival.db"
     monkeypatch.setattr(db, "DB_PATH", str(path))
+    # And never the online high-score database, even if this computer has its address in a secrets file.
+    monkeypatch.setenv("SCORES_DATABASE_URL", "")
     return path
 
 
