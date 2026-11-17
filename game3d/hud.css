@@ -36,7 +36,6 @@
 #lejet-root .lj-toast.live { border-left-color: #FFC607; color: #FFC607; font-weight: 800; }
 #lejet-root .lj-toast.out { opacity: 0; }
 #lejet-root .lj-banner { position: absolute; left: 0; right: 0; top: 30%; text-align: center; opacity: 0; pointer-events: none; }
-#lejet-root .lj-banner.show { animation: lj-banner 4.6s forwards; }
 #lejet-root .lj-banner-title { font-size: clamp(40px, 7vw, 96px); font-weight: 800; letter-spacing: -3px; line-height: 1; text-shadow: 0 4px 0 #000, 0 0 40px rgba(0,0,0,0.6); }
 #lejet-root .lj-banner-sub { font-size: 20px; font-weight: 700; margin-top: 10px; text-shadow: 0 2px 0 #000; }
 #lejet-root .lj-fade { position: absolute; inset: 0; background: #000; opacity: 0; pointer-events: none; }

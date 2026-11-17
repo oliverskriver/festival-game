@@ -1,13 +1,20 @@
-# Musik i Lejet — festival planner (unofficial concept)
+# En nat i Lejet — a festival you can plan and play (unofficial fan project)
 
-A one-day festival planner: put artists on stages, and the app refuses clashes and keeps you inside the €10,000 artist budget. Solo project for Introduction to Programming, Nova SBE 2026/27, built on the Festival Architect brief (`docs/`).
+Team project for Introduction to Programming, Nova SBE 2026/27. It extends the solo project
+"Festival planner" (the Festival Architect brief) into a game:
 
-Not affiliated with Musik i Lejet. All artists are invented.
+- **Plan the programme:** the original planner. Put artists on three stages inside a budget.
+- **Play the festival:** walk around the Musik i Lejet site in 3D, buy a beer, watch concerts and
+  complete one of four missions. You can play the real 2026 programme or the one you planned.
+- **High scores:** every finished night is saved.
+
+Not affiliated with Musik i Lejet. No logos, photos, map artwork or music from the festival or the
+artists are used. The music in the game is made by the computer.
 
 ## Run it
 
 ```
-uv run streamlit run app.py
+uv run streamlit run festival.py
 ```
 
 ## Run the tests
@@ -16,31 +23,41 @@ uv run streamlit run app.py
 uv run pytest
 ```
 
-## Start over with an empty plan
-
-```
-uv run python db.py --reset
-```
-
 ## What is where
 
 ```
-app.py        the screens (entry point). Draws things and passes clicks on.
-logic.py      the rules: may this booking be accepted, and if not, why not.
-db.py         storage: the SQLite file data/festival.db (created on first run).
-style.css     colours and fonts.
-tests/        the automatic checks, one file per feature.
-specs/        one spec per task: Why, What, Out of scope, Done when.
-docs/         the business requirements (BRD) this app implements.
-STUDY-GUIDE.md  how the app works, written for the exam.
+festival.py      the front door: three buttons, then one of the pages below
+game_screens.py  the game's pages: title, set-up, the 3D game, recap, high scores
+app.py           the planner page (the solo project)
+
+game.py          the game's rules ("the referee"): money, drunkenness, concerts, missions, score
+logic.py         the planner's rules: clashes, opening hours, budget
+programme.py     who plays when: the 2026 programme, or the planner's own programme
+world.py         where everything stands, measured from the site map
+
+db.py            storage: one SQLite file, data/festival.db
+
+game3d/          the 3D world, in JavaScript (glued together in file-name order)
+  00_core.js       helpers
+  10_world.js      sky, light, ground, trees, buildings
+  20_people.js     your character and the crowd
+  30_player.js     walking, the camera
+  40_concerts.js   stages, light show, computer-made music
+  50_life.js       time, buying, toilets, passing out, the end of the night
+  55_showtime.js   glow, fireworks, lasers, the security buggy
+  60_missions.js   guards, backstage, the flirt mission, the mission box
+  70_hud.js        clock, bars, mini-map, menus
+  90_main.js       starts the game and runs it frame by frame
+
+tests/           the automatic checks
+specs/           one spec per task: Why, What, Out of scope, Done when
+docs/            the course brief, and where the 2026 programme comes from
+TEAM-GUIDE.md    how it all works, written for the presentation and the code walkthrough
+STUDY-GUIDE.md   the solo project's guide (the planner), written for the exam
 ```
 
-## The rules, in one place
+## The one idea
 
-- One day, 14:00 to 23:00. A set must start and end inside it.
-- An artist can be booked once.
-- No two sets at the same time on the same stage; back to back is fine; other stages do not matter.
-- Fees may not exceed €10,000; exactly €10,000 is allowed.
-- A booking can be moved or removed; a refused move keeps the original.
-- The plan can be finalised with at least four artists, and is then read-only until reopened.
-- Everything is saved, so it is all still there after a restart.
+The 3D world is the stadium; Python is the referee. The browser only reports what happened
+("bought a beer at 21:05", "stood at KESI from 23:55 to 00:20"). `game.py` cleans that list,
+recounts the money, works out how drunk you were and which concerts count, and gives the score.

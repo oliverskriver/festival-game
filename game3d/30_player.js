@@ -71,6 +71,13 @@ function updatePlayer(dt) {
     if (k.ArrowRight) cam.yaw -= 2.0 * dt;
   }
 
+  if (p.driving) {
+    // In the buggy: 55_showtime.js moves it, the walking code below is skipped.
+    p.moving = false; p.dancing = false; p.mode = "idle";
+    p.character.group.position.set(p.x, 0, p.z);
+    return;
+  }
+
   let forward = 0, strafe = 0;
   if (!p.frozen && !G.menuOpen) {
     if (k.KeyW || k.ArrowUp) forward += 1;

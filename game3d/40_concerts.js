@@ -211,7 +211,12 @@ function updateConcerts(dt) {
     const act = acts.find((a) => a.start <= G.minute && G.minute < a.end) || null;
     stage.nextAct = acts.find((a) => a.start > G.minute) || null;
     if (act !== stage.act) {
-      if (stage.act) { toast("Tak for i aften! " + stage.act.artist + " is done on " + stage.name + "."); playCheer(stage, 1.0); }
+      if (stage.act) {
+        toast("Tak for i aften! " + stage.act.artist + " is done on " + stage.name + ".");
+        playCheer(stage, 1.0);
+        // The biggest names go out with fireworks.
+        if (stage.act.pull >= 5 && G.night > 0.3) launchFireworks(stage.x, stage.z, 14);
+      }
       stage.act = act;
       setBand(stage, act);
       if (act) { toast("LIVE NOW · " + stage.name + " · " + act.artist, "live"); playCheer(stage, 1.2); startMusic(stage, act); callTheCrowd(0.12 * act.pull); }
