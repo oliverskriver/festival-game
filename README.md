@@ -11,11 +11,66 @@ Team project for Introduction to Programming, Nova SBE 2026/27. It extends the s
 Not affiliated with Musik i Lejet. No logos, photos, map artwork or music from the festival or the
 artists are used. The music in the game is made by the computer.
 
+**Play it online:** https://en-nat-i-lejet.streamlit.app/ (needs a keyboard and a mouse; the free
+host falls asleep when unused, so the first visit can take about a minute).
+
+## Objectives
+
+- **Extend the best solo project.** Keep the Festival Architect planner working (its 41 tests still
+  pass) and build something bigger on top of it.
+- **Make it a game you want to play.** A single-player, third-person 3D night at Musik i Lejet:
+  pick a day, dress your character, choose a mission, buy a fadøl, watch concerts, stay standing.
+- **Keep the rules in Python.** The 3D world only reports what happened; `game.py` decides what it
+  was worth, so every rule can be tested and explained.
+- **Work like the course teaches.** One branch and one spec per task, tests written first where
+  possible, merged into `main` when green.
+
+## Team
+
+Each member fills in their own row (on GitHub: open this file, click the pencil, edit, "Commit
+changes").
+
+| Member | Main part (see `TEAM-GUIDE.md`, section 11) |
+|---|---|
+| oliverskriver | Rules, programme, site map and storage (`game.py`, `programme.py`, `world.py`, `db.py`) |
+| _name_ | The 3D world and moving in it (`game3d/00`, `10`, `20`, `30`, `90`) |
+| _name_ | What you can do: concerts, missions, menus, pages (`game3d/40`–`70`, `game_screens.py`) |
+
+## Installation
+
+You need a Mac, Windows or Linux computer with internet access. Everything else is installed by
+**uv**, a small tool that downloads the right Python (3.12) and the packages in `pyproject.toml`.
+
+1. Install uv (once). Mac or Linux, in Terminal:
+
+   ```
+   curl -LsSf https://astral.sh/uv/install.sh | sh
+   ```
+
+   Windows, in PowerShell: `powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"`
+
+2. Download the project and go into its folder:
+
+   ```
+   git clone https://github.com/oliverskriver/festival-game.git
+   cd festival-game
+   ```
+
+3. Install Python and the packages:
+
+   ```
+   uv sync
+   ```
+
 ## Run it
 
 ```
 uv run streamlit run festival.py
 ```
+
+The app opens in the browser (the address is shown in the terminal, for example
+`http://localhost:8501`). Stop it with Ctrl + C. Scores are saved in `data/festival.db`, which is
+created on the first run. The online high-score database is optional (see below).
 
 ## High scores online
 
@@ -43,7 +98,7 @@ logic.py         the planner's rules: clashes, opening hours, budget
 programme.py     who plays when: the 2026 programme, or the planner's own programme
 world.py         where everything stands, measured from the site map
 
-db.py            storage: one SQLite file, data/festival.db
+db.py            storage: the SQLite file data/festival.db; online, high scores go to Postgres
 
 game3d/          the 3D world, in JavaScript (glued together in file-name order)
   00_core.js       helpers
