@@ -32,9 +32,9 @@ changes").
 
 | Member | Main part (see `TEAM-GUIDE.md`, section 11) |
 |---|---|
-| oliverskriver | Rules, programme, site map and storage (`game.py`, `programme.py`, `world.py`, `db.py`) |
-| _name_ | The 3D world and moving in it (`game3d/00`, `10`, `20`, `30`, `90`) |
-| _name_ | What you can do: concerts, missions, menus, pages (`game3d/40`–`70`, `game_screens.py`) |
+| Oliver Skriver - 83448 | Rules, programme, site map and storage (`game.py`, `programme.py`, `world.py`, `db.py`) |
+| Marcus Spager - 81716| The 3D world and moving in it (`game3d/00`, `10`, `20`, `30`, `90`) |
+| Rumle Hjelm - 81785 | What you can do: concerts, missions, menus, pages (`game3d/40`–`70`, `game_screens.py`) |
 
 ## Installation
 
